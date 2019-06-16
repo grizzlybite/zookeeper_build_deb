@@ -1,0 +1,17 @@
+- name: zookeeper build  package
+  hosts: "{{ hostname }}"
+
+  roles:
+    - { role: zookeeper-os, become: yes }
+    - { role: zookeeper-build-deb, become: yes, become_user: builder }
+
+
+  environment:
+   debfullname: Pavel Kolodiy
+   debemail: pavel.kolodiy@protonmail.com
+
+  vars_prompt:
+    - name: build_changes
+      prompt: "Please enter changes are included in this build?"
+      private: no
+

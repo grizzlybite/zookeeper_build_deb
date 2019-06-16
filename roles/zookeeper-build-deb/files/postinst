@@ -1,0 +1,23 @@
+#!/bin/bash
+
+zdata="/mnt/zookeeper/data/"
+
+#create dir for zookeeper data
+mkdir -p $zdata
+
+#set config parameters
+
+echo -e "\
+tickTime=2000\n\
+initLimit=5\n\
+syncLimit=2\n\
+dataDir=$zdata\n\
+clientPort=2181\n\
+4lw.commands.whitelist=stat, ruok, conf, isro" > /usr/local/zookeeper/conf/zoo.cfg
+
+
+#add service to autostart
+sed '/exit 0$/i /usr/local/zookeeper/bin/zkServer.sh start' -i /etc/rc.local
+
+#start service
+/usr/local/zookeeper/bin/zkServer.sh start

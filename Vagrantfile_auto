@@ -1,0 +1,26 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.box_check_update = false
+  config.vm.hostname = "zookeeper"
+  config.vm.define "zookeeper"
+  config.vm.boot_timeout = 600
+  config.vm.network "private_network", ip: "192.168.77.100"
+  config.vm.network "forwarded_port", guest: 2181, host: 2181
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]  
+  end
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "zookeeper_build.yml"
+    ansible.inventory_path = "hosts"
+    ansible.extra_vars = {
+        hostname: "zookeeper",
+        build_changes: "changes in this build"
+      }
+  end
+
+
+end
+
+

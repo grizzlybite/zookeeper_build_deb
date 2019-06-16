@@ -1,0 +1,16 @@
+Source: zookeeper
+Maintainer: Pavel Kolodiy <pavel.kolodiy@protonmail.com>
+Section: misc
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: https://zookeeper.apache.org
+
+Package: zookeeper
+Architecture: amd64
+Priority: optional
+Pre-depends: openjdk-8-jdk
+Depends: openjdk-8-jdk, bash
+Description: This is my first attemp building of deb package
+  This is my first attemp building of deb package
+  This is my first attemp building of deb package
+  This is my first attemp building of deb package

@@ -1,0 +1,99 @@
+---
+- name: Get current number of stable zookeeper version
+  shell: curl -s https://www.apache.org/dist/zookeeper/stable/ |egrep "bin.tar.gz" |head -n1| tr '<,>,-' ' '|awk '{print $8}'
+  register: version
+  args:
+    warn: false
+
+- name: Set zookeeper version
+  set_fact:
+    zookeeper_version: "{{ version.stdout }}"
+
+- name: Show version
+  debug:
+    msg: "Current stable version of zookeeper is {{ zookeeper_version }}"
+
+- name: Create dir for package building
+  become_user: root
+  file:
+    path: "{{ item.dir }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: '0755'
+  loop:
+    - { dir: '/tmp/zookeeper-{{ zookeeper_version }}', owner: builder, group: builder }
+    - { dir: '/tmp/zookeeper-{{ zookeeper_version }}/src', owner: builder, group: builder }
+
+
+- name: Create dir frame
+  shell: "{{ item }}"
+  args:
+    chdir: /tmp/zookeeper-{{ zookeeper_version }}
+    warn: false
+  loop:
+    - rm -rf /tmp/zookeeper-{{ zookeeper_version }}/debian
+    - rm -rf /tmp/zookeeper-{{ zookeeper_version }}/src/*
+    - dh_make -y -m --copyright bsd --createorig
+
+
+- name: Delete redundant files
+  shell: rm -f debian/*.EX; rm -f debian/*.ex; rm -f debian/README*
+  args:
+    chdir: /tmp/zookeeper-{{ zookeeper_version }}
+    warn: false
+
+- name: Get src archive
+  get_url:
+    url: https://www.apache.org/dist/zookeeper/stable/apache-zookeeper-{{ zookeeper_version }}-bin.tar.gz
+    dest: /tmp/
+
+- name: Extract source files
+  unarchive:
+    src: /tmp/apache-zookeeper-{{ zookeeper_version }}-bin.tar.gz
+    dest: /tmp/
+    remote_src: True
+
+- name: Move files to src
+  shell: mv /tmp/apache-zookeeper-{{ zookeeper_version }}-bin/* /tmp/zookeeper-{{ zookeeper_version }}/src/
+
+- name: Copy rules and control files
+  copy:
+    src: "{{ item }}"
+    dest: /tmp/zookeeper-{{ zookeeper_version }}/debian/
+    owner: builder
+    group: builder
+    mode: preserve
+  loop:
+    - rules
+    - control
+
+- name: Add postinstall step
+  copy:
+    src: postinst
+    dest: /tmp/zookeeper-{{ zookeeper_version }}/debian/
+    owner: builder
+    group: builder
+    mode: '0755'
+
+- name: Add record to changelog
+  shell: dch --distribution stable "{{ build_changes }}"
+  args:
+    chdir: /tmp/zookeeper-{{ zookeeper_version }}
+
+- name: Build package
+  shell: debuild --no-lintian -b -i -us -uc
+  args:
+    chdir: /tmp/zookeeper-{{ zookeeper_version }}
+  register: build_result
+
+- name: Get result package  name
+  set_fact:
+    package_name: "{{ build_result.stdout | regex_search(regexp) }}"
+  vars:
+    regexp: 'zookeeper\_(.*)deb'
+
+- name: Zookeeper install
+  apt:
+    deb: /tmp/{{ package_name }}
+  become_user: root

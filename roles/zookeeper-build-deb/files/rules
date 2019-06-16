@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+override_dh_install:
+override_dh_usrlocal:
+#create dir & files
+	mkdir -p debian/zookeeper
+	touch debian/zookeeper/dummy
+	rm -rf debian/zookeeper/*
+
+	mkdir -p debian/zookeeper/usr/local/zookeeper
+	cp -r src/* debian/zookeeper/usr/local/zookeeper/
+	cp -r src/conf/zoo_sample.cfg debian/zookeeper/usr/local/zookeeper/conf/zoo.cfg
+	rm -f debian/zookeeper/usr/local/zookeeper/bin/*.cmd
+	chmod +x debian/zookeeper/usr/local/zookeeper/bin/*.sh
+%:
+	dh $@
